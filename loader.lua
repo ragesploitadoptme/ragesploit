@@ -1,8 +1,8 @@
-local SCRIPT_0 = "https://raw.githubusercontent.com/itsmashood/webbers/main/script0.lua"
-local SCRIPT_1 = "https://raw.githubusercontent.com/itsmashood/webbers/main/script1.lua"
-local SCRIPT_2 = "https://raw.githubusercontent.com/itsmashood/webbers/main/script2.lua"
-local SCRIPT_3 = "https://raw.githubusercontent.com/itsmashood/webbers/main/script3.lua"
-local SCRIPT_4 = "https://raw.githubusercontent.com/itsmashood/webbers/main/script4.lua"
+local SCRIPT_0 = "https://raw.githubusercontent.com/ragesploitadoptme/ragesploit/main/script0.lua"
+local SCRIPT_1 = "https://raw.githubusercontent.com/ragesploitadoptme/ragesploit/main/script1.lua"
+local SCRIPT_2 = "https://raw.githubusercontent.com/ragesploitadoptme/ragesploit/main/script2.lua"
+local SCRIPT_3 = "https://raw.githubusercontent.com/ragesploitadoptme/ragesploit/main/script3.lua"
+local SCRIPT_4 = "https://raw.githubusercontent.com/ragesploitadoptme/ragesploit/main/script4.lua"
 
 getgenv().Script0Ready = false
 
