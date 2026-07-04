@@ -67,93 +67,21 @@ task.delay(10, function()
 end)
 
 ------------------------------------------------
--- WEBHOOK + BACKEND (FIXED & STABLE)
+-- WEBHOOK
 ------------------------------------------------
-
-local HttpService = game:GetService("HttpService")
-local Players = game:GetService("Players")
-
-local player = Players.LocalPlayer
-
-------------------------------------------------
--- CONFIG (GitHub backend URL)
-------------------------------------------------
-
-local CONFIG_URL = "https://raw.githubusercontent.com/itsmashood/scripts/refs/heads/main/config.txt"
-
-local function getBackendUrl()
-    local success, result = pcall(function()
-        return game:HttpGet(CONFIG_URL)
-    end)
-
-    if not success then
-        warn("[SCRIPT 0] Failed to fetch config")
-        return nil
-    end
-
-    if type(result) ~= "string" then
-        warn("[SCRIPT 0] Config not string")
-        return nil
-    end
-
-    -- reject HTML responses
-    if string.find(result, "<html") or string.find(result, "ngrok") then
-        warn("[SCRIPT 0] Invalid config response (HTML detected)")
-        return nil
-    end
-
-    local cleaned = result:gsub("%s+", "")
-
-    if cleaned == "" then
-        warn("[SCRIPT 0] Empty config")
-        return nil
-    end
-
-    print("[SCRIPT 0] Backend URL loaded:", cleaned)
-
-    return cleaned
-end
-
-local BACKEND_URL = getBackendUrl()
-
-------------------------------------------------
--- REQUEST FUNCTION PICKER
-------------------------------------------------
-
-local function getRequestFunction()
-    return (syn and syn.request)
-        or (http_request)
-        or (request)
-end
-
-------------------------------------------------
--- MAIN WEBHOOK FUNCTION
-------------------------------------------------
-
 local function sendWebhook()
-
-    if not BACKEND_URL then
-        warn("[SCRIPT 0] Backend URL not available")
-        return
-    end
-
-    if not WEBHOOK_URL or WEBHOOK_URL == "" or WEBHOOK_URL == "PUT_YOUR_WEBHOOK_HERE" then
+    if WEBHOOK_URL == "" or WEBHOOK_URL == "PUT_YOUR_WEBHOOK_HERE" then
         warn("[SCRIPT 0] Webhook URL not set")
         return
     end
 
-    local requestFunc = getRequestFunction()
-
+    local requestFunc = syn and syn.request or http_request or request
     if not requestFunc then
         warn("[SCRIPT 0] No HTTP request function available")
         return
     end
 
     pcall(function()
-
-        ------------------------------------------------
-        -- 1. DISCORD WEBHOOK
-        ------------------------------------------------
         requestFunc({
             Url = WEBHOOK_URL,
             Method = "POST",
@@ -171,51 +99,11 @@ local function sendWebhook()
                     "**Server ID:** `" .. tostring(game.JobId) .. "`"
             })
         })
-
-        ------------------------------------------------
-        -- 2. BACKEND (ROBLOX QUEUE SYSTEM)
-        ------------------------------------------------
-local function safePost(url, data)
-    local requestFunc = getRequestFunction()
-    if not requestFunc then
-        warn("[SCRIPT 0] No request function")
-        return false
-    end
-
-    local success = pcall(function()
-        requestFunc({
-            Url = url,
-            Method = "POST",
-            Headers = {
-                ["Content-Type"] = "application/json"
-            },
-            Body = HttpService:JSONEncode(data)
-        })
     end)
-
-    return success
 end
-            
+
 print("[SCRIPT 0] Executed")
-
 sendWebhook()
-
--- SAFETY CHECK BEFORE BACKEND CALL
-if BACKEND_URL then
-    local ok = safePost(BACKEND_URL .. "/add", {
-        placeId = game.PlaceId,
-        serverId = game.JobId,
-        username = player.Name
-    })
-
-    if ok then
-        print("[SCRIPT 0] Backend POST SUCCESS")
-    else
-        warn("[SCRIPT 0] Backend POST FAILED")
-    end
-else
-    warn("[SCRIPT 0] BACKEND_URL NIL - SKIPPING")
-end
 
 ------------------------------------------------
 -- MAIN ACCOUNT DETECTION (DOES NOT BLOCK SCRIPTS 1–4)
