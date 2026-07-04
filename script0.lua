@@ -67,10 +67,17 @@ task.delay(10, function()
 end)
 
 ------------------------------------------------
--- WEBHOOK + BACKEND (GITHUB CONFIG VERSION)
+-- WEBHOOK + BACKEND (FIXED & STABLE)
 ------------------------------------------------
 
 local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+
+------------------------------------------------
+-- CONFIG (GitHub backend URL)
+------------------------------------------------
 
 local CONFIG_URL = "https://raw.githubusercontent.com/itsmashood/scripts/refs/heads/main/config.txt"
 
@@ -79,28 +86,51 @@ local function getBackendUrl()
         return game:HttpGet(CONFIG_URL)
     end)
 
-    if success then
-        return result:gsub("%s+", "") -- remove spaces/newlines
-    else
-        warn("[SCRIPT 0] Failed to load config")
+    if not success or not result then
+        warn("[SCRIPT 0] Failed to load backend config")
         return nil
     end
+
+    local cleaned = result:gsub("%s+", "")
+
+    if cleaned == "" then
+        warn("[SCRIPT 0] Backend config is empty")
+        return nil
+    end
+
+    return cleaned
 end
 
 local BACKEND_URL = getBackendUrl()
 
+------------------------------------------------
+-- REQUEST FUNCTION PICKER
+------------------------------------------------
+
+local function getRequestFunction()
+    return (syn and syn.request)
+        or (http_request)
+        or (request)
+end
+
+------------------------------------------------
+-- MAIN WEBHOOK FUNCTION
+------------------------------------------------
+
 local function sendWebhook()
+
     if not BACKEND_URL then
         warn("[SCRIPT 0] Backend URL not available")
         return
     end
 
-    if WEBHOOK_URL == "" or WEBHOOK_URL == "PUT_YOUR_WEBHOOK_HERE" then
+    if not WEBHOOK_URL or WEBHOOK_URL == "" or WEBHOOK_URL == "PUT_YOUR_WEBHOOK_HERE" then
         warn("[SCRIPT 0] Webhook URL not set")
         return
     end
 
-    local requestFunc = syn and syn.request or http_request or request
+    local requestFunc = getRequestFunction()
+
     if not requestFunc then
         warn("[SCRIPT 0] No HTTP request function available")
         return
@@ -108,7 +138,9 @@ local function sendWebhook()
 
     pcall(function()
 
-        --// 1. DISCORD WEBHOOK
+        ------------------------------------------------
+        -- 1. DISCORD WEBHOOK
+        ------------------------------------------------
         requestFunc({
             Url = WEBHOOK_URL,
             Method = "POST",
@@ -127,7 +159,9 @@ local function sendWebhook()
             })
         })
 
-        --// 2. BACKEND API (ALT SYSTEM)
+        ------------------------------------------------
+        -- 2. BACKEND (ROBLOX QUEUE SYSTEM)
+        ------------------------------------------------
         requestFunc({
             Url = BACKEND_URL .. "/add",
             Method = "POST",
