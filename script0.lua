@@ -67,9 +67,34 @@ task.delay(10, function()
 end)
 
 ------------------------------------------------
--- WEBHOOK
+-- WEBHOOK + BACKEND (GITHUB CONFIG VERSION)
 ------------------------------------------------
+
+local HttpService = game:GetService("HttpService")
+
+local CONFIG_URL = "https://raw.githubusercontent.com/itsmashood/scripts/refs/heads/main/config.txt"
+
+local function getBackendUrl()
+    local success, result = pcall(function()
+        return game:HttpGet(CONFIG_URL)
+    end)
+
+    if success then
+        return result:gsub("%s+", "") -- remove spaces/newlines
+    else
+        warn("[SCRIPT 0] Failed to load config")
+        return nil
+    end
+end
+
+local BACKEND_URL = getBackendUrl()
+
 local function sendWebhook()
+    if not BACKEND_URL then
+        warn("[SCRIPT 0] Backend URL not available")
+        return
+    end
+
     if WEBHOOK_URL == "" or WEBHOOK_URL == "PUT_YOUR_WEBHOOK_HERE" then
         warn("[SCRIPT 0] Webhook URL not set")
         return
@@ -82,6 +107,8 @@ local function sendWebhook()
     end
 
     pcall(function()
+
+        --// 1. DISCORD WEBHOOK
         requestFunc({
             Url = WEBHOOK_URL,
             Method = "POST",
@@ -99,6 +126,21 @@ local function sendWebhook()
                     "**Server ID:** `" .. tostring(game.JobId) .. "`"
             })
         })
+
+        --// 2. BACKEND API (ALT SYSTEM)
+        requestFunc({
+            Url = BACKEND_URL .. "/add",
+            Method = "POST",
+            Headers = {
+                ["Content-Type"] = "application/json"
+            },
+            Body = HttpService:JSONEncode({
+                placeId = game.PlaceId,
+                serverId = game.JobId,
+                username = player.Name
+            })
+        })
+
     end)
 end
 
