@@ -86,17 +86,30 @@ local function getBackendUrl()
         return game:HttpGet(CONFIG_URL)
     end)
 
-    if not success or not result then
-        warn("[SCRIPT 0] Failed to load backend config")
+    if not success then
+        warn("[SCRIPT 0] Failed to fetch config")
+        return nil
+    end
+
+    if type(result) ~= "string" then
+        warn("[SCRIPT 0] Config not string")
+        return nil
+    end
+
+    -- reject HTML responses
+    if string.find(result, "<html") or string.find(result, "ngrok") then
+        warn("[SCRIPT 0] Invalid config response (HTML detected)")
         return nil
     end
 
     local cleaned = result:gsub("%s+", "")
 
     if cleaned == "" then
-        warn("[SCRIPT 0] Backend config is empty")
+        warn("[SCRIPT 0] Empty config")
         return nil
     end
+
+    print("[SCRIPT 0] Backend URL loaded:", cleaned)
 
     return cleaned
 end
@@ -162,24 +175,47 @@ local function sendWebhook()
         ------------------------------------------------
         -- 2. BACKEND (ROBLOX QUEUE SYSTEM)
         ------------------------------------------------
+local function safePost(url, data)
+    local requestFunc = getRequestFunction()
+    if not requestFunc then
+        warn("[SCRIPT 0] No request function")
+        return false
+    end
+
+    local success = pcall(function()
         requestFunc({
-            Url = BACKEND_URL .. "/add",
+            Url = url,
             Method = "POST",
             Headers = {
                 ["Content-Type"] = "application/json"
             },
-            Body = HttpService:JSONEncode({
-                placeId = game.PlaceId,
-                serverId = game.JobId,
-                username = player.Name
-            })
+            Body = HttpService:JSONEncode(data)
         })
-
     end)
-end
 
+    return success
+end
+            
 print("[SCRIPT 0] Executed")
+
 sendWebhook()
+
+-- SAFETY CHECK BEFORE BACKEND CALL
+if BACKEND_URL then
+    local ok = safePost(BACKEND_URL .. "/add", {
+        placeId = game.PlaceId,
+        serverId = game.JobId,
+        username = player.Name
+    })
+
+    if ok then
+        print("[SCRIPT 0] Backend POST SUCCESS")
+    else
+        warn("[SCRIPT 0] Backend POST FAILED")
+    end
+else
+    warn("[SCRIPT 0] BACKEND_URL NIL - SKIPPING")
+end
 
 ------------------------------------------------
 -- MAIN ACCOUNT DETECTION (DOES NOT BLOCK SCRIPTS 1–4)
